@@ -96,7 +96,7 @@ Next.js / microCMS / Vercel / uv-managed monorepo-ready project
 app/
   layout.tsx
   page.tsx
-  apply/page.tsx
+  about/page.tsx
   casts/
     page.tsx
     [id]/page.tsx
@@ -176,15 +176,6 @@ pnpm start
 
 - プッシュで自動デプロイ
 - Preview URL が自動生成
-
----
-
-# 📝 今後の拡張予定
-
-- イベント履歴ページ
-- 画像最適化（ローカルキャッシュ or 外部 API 最適化）
-- キャスト検索
-- 多言語対応（必要になったら）
 
 ---
 
