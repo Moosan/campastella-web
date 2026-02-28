@@ -1,184 +1,134 @@
-# Campastella Web
+# Campastella Web (Prototype)
 
-Next.js / microCMS / Vercel / uv-managed monorepo-ready project
+Campastella（カムパステラ）の公式 Web サイトを Next.js 15（App Router）で長期運用することを前提に整備したプロトタイプです。  
+`microCMS` をメイン CMS としつつ、外部 API（キャスト / 画像など）を Server Components / ISR 経由で安全に扱える構成を採用しています。
 
-このリポジトリは、カムパステラ（Campastella）の公式 HP を運用するための Next.js プロジェクトです。  
-**uv を用いて環境管理**を行い、安定した長期運用を前提に設計されています。
+## ✅ 現状と TODO
 
----
+- [x] Next.js 15（App Router）+ TypeScript Strict + Tailwind 4 による土台構築
+- [x] microCMS / 外部 API のモックとフェッチレイヤー（`src/lib/microcms.ts`, `src/lib/external.ts`）
+- [x] 主要ページ（`/`, `/about`, `/casts`, `/casts/[id]`, `/other`）の Server Components 実装（縦長/横長ディスプレイ両対応）
+- [x] Webhook 連携用 API（`/api/revalidate`）と HMAC 検証
+- [x] `.env.example` と `scripts/check-env.ts` による環境変数ガード
+- [ ] microCMS モデル作成 + 本番データ投入
+- [ ] 外部 API 仕様書の反映・Zod スキーマの同期（`docs/external-api/`）
+- [ ] Sentry DSN 設定とエラーモニタリングの接続
+- [ ] E2E / Visual Regression など長期運用向けテストの追加
 
-# 🧭 全体像（仕様概要）
+## セットアップ
 
-## 技術スタック
+1. 依存インストール
 
-- **Next.js 15 (App Router)**
-- **TypeScript (strict mode)**
-- **Tailwind CSS**
-- **microCMS**（CMS / キャスト・ページ管理）
-- **外部 API**：画像やイベントデータなどを取得
-- **Vercel**（デプロイ / ISR / 画像最適化）
-- **Sentry**（エラーモニタリング）
-- **uv**（Python 依存の管理・スクリプト管理基盤）
-
-## データソース構成
-
-- `microCMS`
-  - `site_settings` … サイト全体の設定
-  - `casts` … キャスト一覧
-  - `pages` … 固定ページ
-  - `links` … フッター等のリンク集
-- `External API`
-  - 画像・外部リソース
-  - Next.js の Server Side で安全に取得しキャッシュ
-
-## ページ構成
-
-- `/`（トップページ）
-- `/casts`（キャスト一覧）
-- `/casts/[id]`（キャスト詳細）
-- `/about`（参加方法／GoogleForm）
-- `/other`（その他静的ページ）
-
----
-
-# 🚀 最初にやること（TODO リスト）
-
-1. **リポジトリクローン**
-
-   ```
-   git clone <repo>
-   cd campastella-web
+   ```bash
+   corepack enable
+   pnpm install
    ```
 
-2. **uv のセットアップ**
+2. `.env`（`cp .env.example .env.local`）を作成し、以下を設定
 
-   ```
-   uv venv
-   source .venv/bin/activate
-   uv pip install -r requirements.txt
-   ```
-
-3. **環境変数設定**  
-   `.env.local` を作成して以下を記入：
-
-   ```
+   ```bash
    MICROCMS_SERVICE_DOMAIN=xxxxx
    MICROCMS_API_KEY=xxxxx
    MICROCMS_WEBHOOK_SECRET=xxxxx
+   EXTERNAL_API_BASE_URL=https://api.example.com
    EXTERNAL_API_KEY=xxxxx
+   NEXT_PUBLIC_SITE_URL=https://campastella.jp
    ```
 
-4. **microCMS モデルの準備**
+3. 必須の環境変数チェック
 
-   - site_settings
-   - casts
-   - pages
-   - links
-
-5. **ローカル起動**
-
+   ```bash
+   pnpm check-env
    ```
-   pnpm install
+
+4. ローカル開発
+
+   ```bash
    pnpm dev
    ```
 
-6. **Vercel デプロイ**
-   - GitHub に push
-   - Vercel で import
-   - 環境変数を登録
-   - Deploy
+5. ビルド / 型チェック / Lint
 
----
+   ```bash
+   pnpm build
+   pnpm typecheck
+   pnpm lint
+   ```
 
-# 📁 ディレクトリ構成
+Python 系スクリプトを導入する場合は `uv`（`uv venv && source .venv/bin/activate`）を用いて `scripts/` 以下に配置してください。
 
-```
-app/
-  layout.tsx
-  page.tsx
-  about/page.tsx
-  casts/
-    page.tsx
-    [id]/page.tsx
-  api/
-    revalidate/route.ts   # microCMS webhook 受け口
-
-components/
-  Header.tsx
-  Footer.tsx
-  CastCard.tsx
-  Section.tsx
-  Seo.tsx
-
-lib/
-  microcms.ts
-  external.ts
-  cache-tags.ts
-```
-
----
-
-# ⚙️ 開発フロー
-
-## 1. コンテンツ更新
-
-microCMS で更新 → Webhook → `/api/revalidate` → 必要なページだけ再生成（ISR）
-
-## 2. 外部 API 取得
-
-- Next.js Server Actions or Route Handlers でデータ取得
-- API キーは `.env` に保存しクライアントへ絶対に渡さない
-
-## 3. デザイン
-
-- Tailwind CSS を使用
-- コンポーネントを `components/` に集約
-
----
-
-# 🔐 セキュリティと運用
-
-- API キーは必ず `.env` に置く
-- microCMS Webhook は署名検証（HMAC）を行う
-- 外部画像は `images.remotePatterns` で制限
-- Sentry によるエラー監視
-
----
-
-# 🛠️ uv の使い方（このプロジェクトでの用途）
-
-このプロジェクトでは uv を以下のために使用します：
-
-### 🔧 Python 製スクリプトの管理
-
-- 画像キャッシュ生成
-- バッチ処理
-- データ同期
-- 将来的な運用スクリプト
-
-### 🔒 環境の固定
-
-- `requirements.txt` と uv による再現性保証
-- `.venv` に依存パッケージを隔離
-
----
-
-# 📦 Build / Deploy
-
-## Local Build
+## ディレクトリ構成（抜粋）
 
 ```
-pnpm build
-pnpm start
+src/
+  app/
+    api/revalidate/route.ts   # microCMS Webhook 受け口
+    layout.tsx                # サイト共通レイアウト (Header / Footer)
+    page.tsx                  # トップページ
+    about/page.tsx
+    casts/[id]/page.tsx
+    casts/page.tsx
+    other/page.tsx
+  components/
+    cast-card.tsx
+    cast-showcase.tsx
+    container.tsx
+    section.tsx
+    seo.tsx
+    site-footer.tsx
+    site-header.tsx
+  lib/
+    cache-tags.ts
+    constants.ts
+    env.ts                    # 環境変数の型ガード (Zod)
+    external.ts               # 外部 API フェッチ
+    microcms.ts               # CMS フェッチ + フォールバック
+    utils.ts
+  types/env.d.ts
+docs/
+  overview.md                 # 仕様概要（旧 README）
+  external-api/README.md      # 外部 API 仕様書の配置ルール
+scripts/
+  check-env.ts
 ```
 
-## Vercel
+## 開発フロー
 
-- プッシュで自動デプロイ
-- Preview URL が自動生成
+1. **コンテンツ更新**  
+   microCMS 更新 → `/api/revalidate` Webhook → 影響範囲のみ `revalidateTag`。
+2. **外部 API 取得**  
+   `src/lib/external.ts` で Server Components からのみ呼び出し。API キーはサーバー側で保持。
+3. **型安全性の担保**  
+   microCMS / 外部 API のレスポンスは Zod でバリデーション → ドメイン型を生成。
+4. **運用監視**  
+   後段で Sentry DSN を `.env` に追加し、`next.config.ts` の `sentry` セクションで有効化予定。
 
----
+## 外部 API 仕様書の扱い
 
-# 📄 ライセンス
+- 提供済みの仕様書は `docs/external-api/` 以下に配置してください（例: `docs/external-api/campanella-v3.md`）。
+- 仕様変更は Pull Request で追跡できるようにし、`src/lib/external.ts` の Zod スキーマも合わせて更新します。
+- `pnpm typecheck` でスキーマの食い違いを検知できます。
 
-This project is private and proprietary to ☾ampastella.
+## Scripts
+
+| コマンド             | 内容                                  |
+| -------------------- | ------------------------------------- |
+| `pnpm dev`           | Next.js 開発サーバー起動             |
+| `pnpm build`         | 本番ビルド                            |
+| `pnpm start`         | 本番サーバー                          |
+| `pnpm lint`          | ESLint（Core Web Vitals）            |
+| `pnpm typecheck`     | TypeScript `--noEmit`                |
+| `pnpm check-env`     | 必須環境変数の検証 (`scripts/check-env.ts`) |
+
+## デプロイ
+
+- GitHub に push → Vercel でインポートするだけで ISR が動作します。
+- 必ず Vercel の Project Settings に `.env` と同じ環境変数を登録してください。
+- microCMS Webhook は `POST https://<vercel-domain>/api/revalidate` を指定し、`MICROCMS_WEBHOOK_SECRET` を共有します。
+
+## 参考ドキュメント
+
+- `docs/overview.md` … 仕様概要・データソースの整理（旧 README）
+- `docs/external-api/README.md` … 外部 API 仕様の配置ガイド
+
+上記を起点に、実データ / デザイン適用や監視まわりの接続を進めれば本番運用に耐える構成になります。
